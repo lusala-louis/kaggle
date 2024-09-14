@@ -1,0 +1,958 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "80f76980",
+   "metadata": {
+    "_cell_guid": "b1076dfc-b9ad-4769-8c92-a6c4dae69d19",
+    "_uuid": "8f2839f25d086af736a60e9eeb907d3b93b6e0e5",
+    "execution": {
+     "iopub.execute_input": "2024-09-14T20:58:12.607056Z",
+     "iopub.status.busy": "2024-09-14T20:58:12.606575Z",
+     "iopub.status.idle": "2024-09-14T20:58:13.068422Z",
+     "shell.execute_reply": "2024-09-14T20:58:13.066495Z"
+    },
+    "papermill": {
+     "duration": 0.473913,
+     "end_time": "2024-09-14T20:58:13.071328",
+     "exception": false,
+     "start_time": "2024-09-14T20:58:12.597415",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "/kaggle/input/playground-series-s4e9/sample_submission.csv\n",
+      "/kaggle/input/playground-series-s4e9/train.csv\n",
+      "/kaggle/input/playground-series-s4e9/test.csv\n"
+     ]
+    }
+   ],
+   "source": [
+    "# This Python 3 environment comes with many helpful analytics libraries installed\n",
+    "# It is defined by the kaggle/python Docker image: https://github.com/kaggle/docker-python\n",
+    "# For example, here's several helpful packages to load\n",
+    "\n",
+    "import numpy as np # linear algebra\n",
+    "import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)\n",
+    "\n",
+    "# Input data files are available in the read-only \"../input/\" directory\n",
+    "# For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory\n",
+    "\n",
+    "import os\n",
+    "for dirname, _, filenames in os.walk('/kaggle/input'):\n",
+    "    for filename in filenames:\n",
+    "        print(os.path.join(dirname, filename))\n",
+    "\n",
+    "# You can write up to 20GB to the current directory (/kaggle/working/) that gets preserved as output when you create a version using \"Save & Run All\" \n",
+    "# You can also write temporary files to /kaggle/temp/, but they won't be saved outside of the current session"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "fe2398f0",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-09-14T20:58:13.087177Z",
+     "iopub.status.busy": "2024-09-14T20:58:13.086640Z",
+     "iopub.status.idle": "2024-09-14T20:58:13.094087Z",
+     "shell.execute_reply": "2024-09-14T20:58:13.092774Z"
+    },
+    "papermill": {
+     "duration": 0.017698,
+     "end_time": "2024-09-14T20:58:13.096564",
+     "exception": false,
+     "start_time": "2024-09-14T20:58:13.078866",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "import matplotlib.pyplot as plt\n",
+    "%matplotlib inline"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a434ccf1",
+   "metadata": {
+    "papermill": {
+     "duration": 0.005937,
+     "end_time": "2024-09-14T20:58:13.108977",
+     "exception": false,
+     "start_time": "2024-09-14T20:58:13.103040",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "## Importing the data"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "c14defc5",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-09-14T20:58:13.123220Z",
+     "iopub.status.busy": "2024-09-14T20:58:13.122817Z",
+     "iopub.status.idle": "2024-09-14T20:58:14.149532Z",
+     "shell.execute_reply": "2024-09-14T20:58:14.148113Z"
+    },
+    "papermill": {
+     "duration": 1.037312,
+     "end_time": "2024-09-14T20:58:14.152485",
+     "exception": false,
+     "start_time": "2024-09-14T20:58:13.115173",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>id</th>\n",
+       "      <th>brand</th>\n",
+       "      <th>model</th>\n",
+       "      <th>model_year</th>\n",
+       "      <th>milage</th>\n",
+       "      <th>fuel_type</th>\n",
+       "      <th>engine</th>\n",
+       "      <th>transmission</th>\n",
+       "      <th>ext_col</th>\n",
+       "      <th>int_col</th>\n",
+       "      <th>accident</th>\n",
+       "      <th>clean_title</th>\n",
+       "      <th>price</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>0</td>\n",
+       "      <td>MINI</td>\n",
+       "      <td>Cooper S Base</td>\n",
+       "      <td>2007</td>\n",
+       "      <td>213000</td>\n",
+       "      <td>Gasoline</td>\n",
+       "      <td>172.0HP 1.6L 4 Cylinder Engine Gasoline Fuel</td>\n",
+       "      <td>A/T</td>\n",
+       "      <td>Yellow</td>\n",
+       "      <td>Gray</td>\n",
+       "      <td>None reported</td>\n",
+       "      <td>Yes</td>\n",
+       "      <td>4200</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>1</td>\n",
+       "      <td>Lincoln</td>\n",
+       "      <td>LS V8</td>\n",
+       "      <td>2002</td>\n",
+       "      <td>143250</td>\n",
+       "      <td>Gasoline</td>\n",
+       "      <td>252.0HP 3.9L 8 Cylinder Engine Gasoline Fuel</td>\n",
+       "      <td>A/T</td>\n",
+       "      <td>Silver</td>\n",
+       "      <td>Beige</td>\n",
+       "      <td>At least 1 accident or damage reported</td>\n",
+       "      <td>Yes</td>\n",
+       "      <td>4999</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>2</td>\n",
+       "      <td>Chevrolet</td>\n",
+       "      <td>Silverado 2500 LT</td>\n",
+       "      <td>2002</td>\n",
+       "      <td>136731</td>\n",
+       "      <td>E85 Flex Fuel</td>\n",
+       "      <td>320.0HP 5.3L 8 Cylinder Engine Flex Fuel Capab...</td>\n",
+       "      <td>A/T</td>\n",
+       "      <td>Blue</td>\n",
+       "      <td>Gray</td>\n",
+       "      <td>None reported</td>\n",
+       "      <td>Yes</td>\n",
+       "      <td>13900</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>3</td>\n",
+       "      <td>Genesis</td>\n",
+       "      <td>G90 5.0 Ultimate</td>\n",
+       "      <td>2017</td>\n",
+       "      <td>19500</td>\n",
+       "      <td>Gasoline</td>\n",
+       "      <td>420.0HP 5.0L 8 Cylinder Engine Gasoline Fuel</td>\n",
+       "      <td>Transmission w/Dual Shift Mode</td>\n",
+       "      <td>Black</td>\n",
+       "      <td>Black</td>\n",
+       "      <td>None reported</td>\n",
+       "      <td>Yes</td>\n",
+       "      <td>45000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>4</td>\n",
+       "      <td>Mercedes-Benz</td>\n",
+       "      <td>Metris Base</td>\n",
+       "      <td>2021</td>\n",
+       "      <td>7388</td>\n",
+       "      <td>Gasoline</td>\n",
+       "      <td>208.0HP 2.0L 4 Cylinder Engine Gasoline Fuel</td>\n",
+       "      <td>7-Speed A/T</td>\n",
+       "      <td>Black</td>\n",
+       "      <td>Beige</td>\n",
+       "      <td>None reported</td>\n",
+       "      <td>Yes</td>\n",
+       "      <td>97500</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   id          brand              model  model_year  milage      fuel_type  \\\n",
+       "0   0           MINI      Cooper S Base        2007  213000       Gasoline   \n",
+       "1   1        Lincoln              LS V8        2002  143250       Gasoline   \n",
+       "2   2      Chevrolet  Silverado 2500 LT        2002  136731  E85 Flex Fuel   \n",
+       "3   3        Genesis   G90 5.0 Ultimate        2017   19500       Gasoline   \n",
+       "4   4  Mercedes-Benz        Metris Base        2021    7388       Gasoline   \n",
+       "\n",
+       "                                              engine  \\\n",
+       "0       172.0HP 1.6L 4 Cylinder Engine Gasoline Fuel   \n",
+       "1       252.0HP 3.9L 8 Cylinder Engine Gasoline Fuel   \n",
+       "2  320.0HP 5.3L 8 Cylinder Engine Flex Fuel Capab...   \n",
+       "3       420.0HP 5.0L 8 Cylinder Engine Gasoline Fuel   \n",
+       "4       208.0HP 2.0L 4 Cylinder Engine Gasoline Fuel   \n",
+       "\n",
+       "                     transmission ext_col int_col  \\\n",
+       "0                             A/T  Yellow    Gray   \n",
+       "1                             A/T  Silver   Beige   \n",
+       "2                             A/T    Blue    Gray   \n",
+       "3  Transmission w/Dual Shift Mode   Black   Black   \n",
+       "4                     7-Speed A/T   Black   Beige   \n",
+       "\n",
+       "                                 accident clean_title  price  \n",
+       "0                           None reported         Yes   4200  \n",
+       "1  At least 1 accident or damage reported         Yes   4999  \n",
+       "2                           None reported         Yes  13900  \n",
+       "3                           None reported         Yes  45000  \n",
+       "4                           None reported         Yes  97500  "
+      ]
+     },
+     "execution_count": 3,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data = pd.read_csv('/kaggle/input/playground-series-s4e9/train.csv', delimiter = ',')\n",
+    "data.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "694f9c13",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-09-14T20:58:14.167614Z",
+     "iopub.status.busy": "2024-09-14T20:58:14.167175Z",
+     "iopub.status.idle": "2024-09-14T20:58:14.175648Z",
+     "shell.execute_reply": "2024-09-14T20:58:14.174262Z"
+    },
+    "papermill": {
+     "duration": 0.018962,
+     "end_time": "2024-09-14T20:58:14.178148",
+     "exception": false,
+     "start_time": "2024-09-14T20:58:14.159186",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "['id',\n",
+       " 'brand',\n",
+       " 'model',\n",
+       " 'model_year',\n",
+       " 'milage',\n",
+       " 'fuel_type',\n",
+       " 'engine',\n",
+       " 'transmission',\n",
+       " 'ext_col',\n",
+       " 'int_col',\n",
+       " 'accident',\n",
+       " 'clean_title',\n",
+       " 'price']"
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# All the columns in the data\n",
+    "columns = list(data.columns.values)\n",
+    "columns"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "fe85969c",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-09-14T20:58:14.194492Z",
+     "iopub.status.busy": "2024-09-14T20:58:14.193992Z",
+     "iopub.status.idle": "2024-09-14T20:58:14.201033Z",
+     "shell.execute_reply": "2024-09-14T20:58:14.199635Z"
+    },
+    "papermill": {
+     "duration": 0.018561,
+     "end_time": "2024-09-14T20:58:14.203687",
+     "exception": false,
+     "start_time": "2024-09-14T20:58:14.185126",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Number of columns : 13\n",
+      "Number of rows : 188533\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(f\"Number of columns : {data.shape[1]}\")\n",
+    "print(f\"Number of rows : {data.shape[0]}\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "01b10513",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-09-14T20:58:14.219888Z",
+     "iopub.status.busy": "2024-09-14T20:58:14.219362Z",
+     "iopub.status.idle": "2024-09-14T20:58:14.410558Z",
+     "shell.execute_reply": "2024-09-14T20:58:14.409364Z"
+    },
+    "papermill": {
+     "duration": 0.202652,
+     "end_time": "2024-09-14T20:58:14.413367",
+     "exception": false,
+     "start_time": "2024-09-14T20:58:14.210715",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "id                  0\n",
+       "brand               0\n",
+       "model               0\n",
+       "model_year          0\n",
+       "milage              0\n",
+       "fuel_type        5083\n",
+       "engine              0\n",
+       "transmission        0\n",
+       "ext_col             0\n",
+       "int_col             0\n",
+       "accident         2452\n",
+       "clean_title     21419\n",
+       "price               0\n",
+       "dtype: int64"
+      ]
+     },
+     "execution_count": 6,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# Get null values\n",
+    "data.isnull().sum()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "2a675f3f",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-09-14T20:58:14.430268Z",
+     "iopub.status.busy": "2024-09-14T20:58:14.429112Z",
+     "iopub.status.idle": "2024-09-14T20:58:14.461991Z",
+     "shell.execute_reply": "2024-09-14T20:58:14.460783Z"
+    },
+    "papermill": {
+     "duration": 0.044362,
+     "end_time": "2024-09-14T20:58:14.464855",
+     "exception": false,
+     "start_time": "2024-09-14T20:58:14.420493",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "# Replacing the null values in accident and clean_title column with 0\n",
+    "fill = 'No'\n",
+    "data['clean_title'] = data['clean_title'].fillna(fill)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "21f1100b",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-09-14T20:58:14.481410Z",
+     "iopub.status.busy": "2024-09-14T20:58:14.480906Z",
+     "iopub.status.idle": "2024-09-14T20:58:14.510371Z",
+     "shell.execute_reply": "2024-09-14T20:58:14.508982Z"
+    },
+    "papermill": {
+     "duration": 0.041343,
+     "end_time": "2024-09-14T20:58:14.513352",
+     "exception": false,
+     "start_time": "2024-09-14T20:58:14.472009",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0"
+      ]
+     },
+     "execution_count": 8,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data['clean_title'].isnull().sum()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "b61262e0",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-09-14T20:58:14.531323Z",
+     "iopub.status.busy": "2024-09-14T20:58:14.530832Z",
+     "iopub.status.idle": "2024-09-14T20:58:14.580005Z",
+     "shell.execute_reply": "2024-09-14T20:58:14.578709Z"
+    },
+    "papermill": {
+     "duration": 0.061445,
+     "end_time": "2024-09-14T20:58:14.582589",
+     "exception": false,
+     "start_time": "2024-09-14T20:58:14.521144",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "brand\n",
+       "Ford             23088\n",
+       "Mercedes-Benz    19172\n",
+       "BMW              17028\n",
+       "Chevrolet        16335\n",
+       "Audi             10887\n",
+       "Porsche          10612\n",
+       "Land              9525\n",
+       "Toyota            8850\n",
+       "Lexus             8643\n",
+       "Jeep              6474\n",
+       "Cadillac          4674\n",
+       "RAM               4249\n",
+       "Nissan            3930\n",
+       "Tesla             3738\n",
+       "INFINITI          3276\n",
+       "GMC               3215\n",
+       "Dodge             3133\n",
+       "Mazda             2719\n",
+       "Kia               2497\n",
+       "Lincoln           2423\n",
+       "Subaru            2381\n",
+       "Acura             2282\n",
+       "Honda             2101\n",
+       "Hyundai           2045\n",
+       "Volkswagen        1765\n",
+       "Jaguar            1319\n",
+       "Bentley           1155\n",
+       "MINI              1064\n",
+       "Genesis            969\n",
+       "Buick              940\n",
+       "Maserati           939\n",
+       "Lamborghini        809\n",
+       "Chrysler           727\n",
+       "Volvo              723\n",
+       "Alfa               682\n",
+       "Rivian             590\n",
+       "Rolls-Royce        561\n",
+       "Mitsubishi         551\n",
+       "Pontiac            538\n",
+       "Hummer             520\n",
+       "Ferrari            359\n",
+       "McLaren            243\n",
+       "Aston              238\n",
+       "Saturn             148\n",
+       "Scion              120\n",
+       "Lucid               69\n",
+       "Mercury             57\n",
+       "Lotus               52\n",
+       "FIAT                44\n",
+       "Saab                22\n",
+       "Karma               17\n",
+       "Suzuki               8\n",
+       "Plymouth             7\n",
+       "Bugatti              7\n",
+       "Polestar             7\n",
+       "smart                3\n",
+       "Maybach              3\n",
+       "Name: count, dtype: int64"
+      ]
+     },
+     "execution_count": 9,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# Get the counts of the various categories in every column\n",
+    "data['brand'].value_counts()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "c9aecfaa",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-09-14T20:58:14.599864Z",
+     "iopub.status.busy": "2024-09-14T20:58:14.599333Z",
+     "iopub.status.idle": "2024-09-14T20:58:14.642306Z",
+     "shell.execute_reply": "2024-09-14T20:58:14.640881Z"
+    },
+    "papermill": {
+     "duration": 0.055113,
+     "end_time": "2024-09-14T20:58:14.645250",
+     "exception": false,
+     "start_time": "2024-09-14T20:58:14.590137",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "fuel_type\n",
+       "Gasoline          165940\n",
+       "Hybrid              6832\n",
+       "E85 Flex Fuel       5406\n",
+       "Diesel              3955\n",
+       "–                    781\n",
+       "Plug-In Hybrid       521\n",
+       "not supported         15\n",
+       "Name: count, dtype: int64"
+      ]
+     },
+     "execution_count": 10,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data['fuel_type'].value_counts()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "d5865745",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-09-14T20:58:14.663630Z",
+     "iopub.status.busy": "2024-09-14T20:58:14.663143Z",
+     "iopub.status.idle": "2024-09-14T20:58:14.709806Z",
+     "shell.execute_reply": "2024-09-14T20:58:14.708466Z"
+    },
+    "papermill": {
+     "duration": 0.059316,
+     "end_time": "2024-09-14T20:58:14.712758",
+     "exception": false,
+     "start_time": "2024-09-14T20:58:14.653442",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "engine\n",
+       "355.0HP 5.3L 8 Cylinder Engine Gasoline Fuel           3462\n",
+       "240.0HP 2.0L 4 Cylinder Engine Gasoline Fuel           2902\n",
+       "420.0HP 6.2L 8 Cylinder Engine Gasoline Fuel           2841\n",
+       "2.0L I4 16V GDI DOHC Turbo                             2680\n",
+       "375.0HP 3.5L V6 Cylinder Engine Gasoline Fuel          2451\n",
+       "                                                       ... \n",
+       "151.0HP 1.5L 4 Cylinder Engine Gas/Electric Hybrid        1\n",
+       "184.0HP 2.4L 4 Cylinder Engine Flex Fuel Capability       1\n",
+       "78.0HP 1.2L 3 Cylinder Engine Gasoline Fuel               1\n",
+       "139.0HP 1.6L 4 Cylinder Engine Plug-In Electric/Gas       1\n",
+       "313.0HP 2.0L 4 Cylinder Engine Plug-In Electric/Gas       1\n",
+       "Name: count, Length: 1117, dtype: int64"
+      ]
+     },
+     "execution_count": 11,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data['engine'].value_counts()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "5a65e0a6",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-09-14T20:58:14.731078Z",
+     "iopub.status.busy": "2024-09-14T20:58:14.730605Z",
+     "iopub.status.idle": "2024-09-14T20:58:14.774238Z",
+     "shell.execute_reply": "2024-09-14T20:58:14.773057Z"
+    },
+    "papermill": {
+     "duration": 0.055765,
+     "end_time": "2024-09-14T20:58:14.776675",
+     "exception": false,
+     "start_time": "2024-09-14T20:58:14.720910",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "transmission\n",
+       "A/T                                                   49904\n",
+       "8-Speed A/T                                           20645\n",
+       "Transmission w/Dual Shift Mode                        19255\n",
+       "6-Speed A/T                                           18044\n",
+       "6-Speed M/T                                           11998\n",
+       "7-Speed A/T                                           11124\n",
+       "Automatic                                             10691\n",
+       "8-Speed Automatic                                      8431\n",
+       "10-Speed A/T                                           8044\n",
+       "9-Speed A/T                                            3866\n",
+       "5-Speed A/T                                            3217\n",
+       "10-Speed Automatic                                     3164\n",
+       "6-Speed Automatic                                      2799\n",
+       "4-Speed A/T                                            2546\n",
+       "5-Speed M/T                                            2409\n",
+       "9-Speed Automatic                                      2325\n",
+       "CVT Transmission                                       1990\n",
+       "1-Speed A/T                                            1869\n",
+       "M/T                                                    1179\n",
+       "7-Speed Automatic with Auto-Shift                      1172\n",
+       "Automatic CVT                                           829\n",
+       "8-Speed Automatic with Auto-Shift                       549\n",
+       "1-Speed Automatic                                       365\n",
+       "7-Speed M/T                                             355\n",
+       "6-Speed Manual                                          211\n",
+       "7-Speed Automatic                                       178\n",
+       "5-Speed Automatic                                       159\n",
+       "Transmission Overdrive Switch                           156\n",
+       "7-Speed Manual                                          151\n",
+       "6-Speed Automatic with Auto-Shift                       111\n",
+       "2                                                        91\n",
+       "–                                                        87\n",
+       "2-Speed A/T                                              71\n",
+       "Variable                                                 66\n",
+       "F                                                        65\n",
+       "4-Speed Automatic                                        48\n",
+       "10-Speed Automatic with Overdrive                        40\n",
+       "6 Speed Mt                                               37\n",
+       "9-Speed Automatic with Auto-Shift                        33\n",
+       "6-Speed Electronically Controlled Automatic with O       31\n",
+       "7-Speed                                                  29\n",
+       "8-Speed Manual                                           28\n",
+       "Manual                                                   27\n",
+       "6-Speed                                                  27\n",
+       "2-Speed Automatic                                        22\n",
+       "6 Speed At/Mt                                            20\n",
+       "7-Speed DCT Automatic                                    18\n",
+       "Single-Speed Fixed Gear                                  16\n",
+       "CVT-F                                                    15\n",
+       "8-SPEED AT                                               13\n",
+       "8-SPEED A/T                                               7\n",
+       "SCHEDULED FOR OR IN PRODUCTION                            6\n",
+       "Name: count, dtype: int64"
+      ]
+     },
+     "execution_count": 12,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data['transmission'].value_counts()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "8ce36023",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-09-14T20:58:14.795398Z",
+     "iopub.status.busy": "2024-09-14T20:58:14.794873Z",
+     "iopub.status.idle": "2024-09-14T20:58:14.839555Z",
+     "shell.execute_reply": "2024-09-14T20:58:14.838218Z"
+    },
+    "papermill": {
+     "duration": 0.057242,
+     "end_time": "2024-09-14T20:58:14.842038",
+     "exception": false,
+     "start_time": "2024-09-14T20:58:14.784796",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "ext_col\n",
+       "Black                                 48658\n",
+       "White                                 43815\n",
+       "Gray                                  25293\n",
+       "Silver                                16995\n",
+       "Blue                                  14555\n",
+       "                                      ...  \n",
+       "GT SILVER                                 5\n",
+       "Blue Caelum                               5\n",
+       "Granite Crystal Metallic Clearcoat        5\n",
+       "BLUE                                      3\n",
+       "Mango Tango Pearlcoat                     2\n",
+       "Name: count, Length: 319, dtype: int64"
+      ]
+     },
+     "execution_count": 13,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data['ext_col'].value_counts()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "632f7dda",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-09-14T20:58:14.861125Z",
+     "iopub.status.busy": "2024-09-14T20:58:14.860691Z",
+     "iopub.status.idle": "2024-09-14T20:58:14.904926Z",
+     "shell.execute_reply": "2024-09-14T20:58:14.903448Z"
+    },
+    "papermill": {
+     "duration": 0.057008,
+     "end_time": "2024-09-14T20:58:14.907630",
+     "exception": false,
+     "start_time": "2024-09-14T20:58:14.850622",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "int_col\n",
+       "Black           107674\n",
+       "Beige            24495\n",
+       "Gray             21204\n",
+       "Brown             5810\n",
+       "Red               5145\n",
+       "                 ...  \n",
+       "Nougat Brown         7\n",
+       "Classic Red          7\n",
+       "Cobalt Blue          6\n",
+       "WHITE                6\n",
+       "ORANGE               4\n",
+       "Name: count, Length: 156, dtype: int64"
+      ]
+     },
+     "execution_count": 14,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data['int_col'].value_counts()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "id": "bc13508b",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2024-09-14T20:58:14.927829Z",
+     "iopub.status.busy": "2024-09-14T20:58:14.927319Z",
+     "iopub.status.idle": "2024-09-14T20:58:14.969238Z",
+     "shell.execute_reply": "2024-09-14T20:58:14.967872Z"
+    },
+    "papermill": {
+     "duration": 0.055524,
+     "end_time": "2024-09-14T20:58:14.971805",
+     "exception": false,
+     "start_time": "2024-09-14T20:58:14.916281",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "clean_title\n",
+       "Yes    167114\n",
+       "No      21419\n",
+       "Name: count, dtype: int64"
+      ]
+     },
+     "execution_count": 15,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data['clean_title'].value_counts()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "7c6306a7",
+   "metadata": {
+    "papermill": {
+     "duration": 0.008323,
+     "end_time": "2024-09-14T20:58:14.988832",
+     "exception": false,
+     "start_time": "2024-09-14T20:58:14.980509",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kaggle": {
+   "accelerator": "none",
+   "dataSources": [
+    {
+     "databundleVersionId": 9057646,
+     "sourceId": 76728,
+     "sourceType": "competition"
+    }
+   ],
+   "dockerImageVersionId": 30761,
+   "isGpuEnabled": false,
+   "isInternetEnabled": false,
+   "language": "python",
+   "sourceType": "notebook"
+  },
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.14"
+  },
+  "papermill": {
+   "default_parameters": {},
+   "duration": 5.982699,
+   "end_time": "2024-09-14T20:58:15.521781",
+   "environment_variables": {},
+   "exception": null,
+   "input_path": "__notebook__.ipynb",
+   "output_path": "__notebook__.ipynb",
+   "parameters": {},
+   "start_time": "2024-09-14T20:58:09.539082",
+   "version": "2.6.0"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
